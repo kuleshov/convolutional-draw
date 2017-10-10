@@ -26,11 +26,11 @@ A,B = 28,28 # image width,height
 img_size = B*A # the canvas size
 
 n_chan_r = 1 # num of channels in the images
-n_chan_z = 12 # num of channels in the latent variables
-n_chan_hd = 80 # num of channels in decoder hidden state
-n_chan_he = 80 # num of channels in encoder hidden state
+n_chan_z = 6 # num of channels in the latent variables
+n_chan_hd = 40 # num of channels in decoder hidden state
+n_chan_he = 40 # num of channels in encoder hidden state
 
-T=10 # MNIST generation sequence length
+T=5 # MNIST generation sequence length
 batch_size=100 # training minibatch size
 train_iters=10000
 learning_rate=1e-4 # learning rate for optimizer
@@ -54,7 +54,7 @@ def linear(x,output_dim):
     b=tf.get_variable("b", [output_dim], initializer=tf.constant_initializer(0.0))
     return tf.matmul(x,w)+b
 
-def conv(x, n_filters, filter_dim=5):
+def conv(x, n_filters, filter_dim=3):
     """
     convolutional transformation W**x+b
     assumes x.shape = (batch_size, A, B, num_features)
@@ -71,7 +71,6 @@ def conv(x, n_filters, filter_dim=5):
 
     return x    
 
-## ENCODE ## 
 def encode(state,input):
     """
     run LSTM
@@ -81,8 +80,6 @@ def encode(state,input):
     """
     with tf.variable_scope("encoder",reuse=DO_SHARE):
         return lstm_enc(input,state)
-
-## Q-SAMPLER (VARIATIONAL AUTOENCODER) ##
 
 def sampleQ(h_enc):
     """
@@ -155,7 +152,7 @@ cost=Lx+Lz
 
 ## OPTIMIZER ## 
 
-optimizer=tf.train.AdamOptimizer(learning_rate, beta1=0.5)
+optimizer=tf.train.AdamOptimizer(learning_rate)
 grads=optimizer.compute_gradients(cost)
 for i,(g,v) in enumerate(grads):
     if g is not None:
@@ -172,7 +169,7 @@ if not os.path.exists(data_directory):
 train_data = mnist.input_data.read_data_sets(data_directory, one_hot=True).train # binarized (0-1) mnist data
 
 fetches=[]
-fetches.extend([Lx,Lz,train_op])
+fetches.extend([Lx,Lz,x_recons,train_op])
 Lxs=[0]*train_iters
 Lzs=[0]*train_iters
 
@@ -182,14 +179,22 @@ saver = tf.train.Saver() # saves variables learned during training
 tf.global_variables_initializer().run()
 #saver.restore(sess, "/tmp/draw/drawmodel.ckpt") # to restore from model, uncomment this line
 
+from plot_data import xrecons_grid
+import matplotlib
+matplotlib.use('Agg') # Force matplotlib to not use any Xwindows backend.
+import matplotlib.pyplot as plt
+
 for i in range(train_iters):
     xtrain,_=train_data.next_batch(batch_size) # xtrain is (batch_size x img_size)
     xtrain = xtrain.reshape((batch_size, 28, 28, 1))
     feed_dict={x:xtrain}
     results=sess.run(fetches,feed_dict)
-    Lxs[i],Lzs[i],_=results
+    Lxs[i],Lzs[i],xri,_=results
     if i%100==0:
         print("iter=%d : Lx: %f Lz: %f" % (i,Lxs[i],Lzs[i]))
+        img = xrecons_grid(xri, B, A)
+        plt.matshow(img)
+        plt.savefig('vis.%d.png' % i)
 
 ## TRAINING FINISHED ## 
 

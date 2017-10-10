@@ -1,6 +1,5 @@
 import tensorflow as tf
 
-# from tensorflow.python.ops import array_ops
 from tensorflow.python.ops import variable_scope as vs
 from tensorflow.python.ops.math_ops import sigmoid
 from tensorflow.python.ops.math_ops import tanh
@@ -28,14 +27,12 @@ class ConvLSTMCell(object):
   def __call__(self, inputs, state, scope=None):
     """Convolutional Long short-term memory cell (ConvLSTM)."""
     with vs.variable_scope(scope or self.name): # "ConvLSTMCell"
-      # c, h = array_ops.split(3, 2, state)
       c, h = tf.split(state, 2, axis=3)
 
       # batch_size * height * width * channel
       concat = _conv([inputs, h], 4 * self.hidden_num, self.filter_size)
 
       # i = input_gate, j = new_input, f = forget_gate, o = output_gate
-      # i, j, f, o = array_ops.split(3, 4, concat)
       i, j, f, o = tf.split(concat, 4, axis=3)
 
       new_c = (c * sigmoid(f + self.forget_bias) + sigmoid(i) *
@@ -52,7 +49,6 @@ def _conv(args, output_size, filter_size, stddev=0.001, bias=True, bias_start=0.
     args = [args]
 
   # Calculate the total size of arguments on dimension 3.
-  # (batch_size x height x width x arg_size)
   total_arg_size = 0
   shapes = [a.get_shape().as_list() for a in args]
   height = shapes[0][1]
