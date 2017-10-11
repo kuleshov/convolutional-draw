@@ -27,11 +27,11 @@ img_size = B*A # the canvas size
 n_chan_x = 3 # num of channels in the images
 n_chan_r = n_chan_x * 2 # contains mean + log-stdv
 n_chan_z = 12 # num of channels in the latent variables
-n_chan_hd = 100 # num of channels in decoder hidden state
-n_chan_he = 100 # num of channels in encoder hidden state
+n_chan_hd = 320 # num of channels in decoder hidden state
+n_chan_he = 320 # num of channels in encoder hidden state
 
-T=10 # generation sequence length
-batch_size=100 # training minibatch size
+T=32 # generation sequence length
+batch_size=32 # training minibatch size
 train_iters=10000
 learning_rate=1e-4 # learning rate for optimizer
 eps=1e-6 # epsilon for numerical stability
@@ -87,11 +87,11 @@ def sampleQ(h_enc):
     mu is (batch,z_size)
     """
     with tf.variable_scope("mu",reuse=DO_SHARE):
-        mu=conv(h_enc,n_chan_z)
+        mu = conv(h_enc,n_chan_z)
     with tf.variable_scope("sigma",reuse=DO_SHARE):
-        logsigma=mu=conv(h_enc,n_chan_z)
-        sigma=tf.exp(logsigma)
-    return (mu + sigma*e, mu, logsigma, sigma)
+        logsigma = conv(h_enc,n_chan_z)
+        sigma = tf.exp(logsigma)
+    return (mu + sigma * e, mu, logsigma, sigma)
 
 def decode(state,input):
     with tf.variable_scope("decoder",reuse=DO_SHARE):
@@ -172,6 +172,8 @@ train_op=optimizer.apply_gradients(grads)
 ## RUN TRAINING ## 
 import data
 Xtr, Ytr, Xte, Yte = data.load_cifar10()
+Xtr /= 256
+Xte /= 256
 train_data = data.Dataset(Xtr, Ytr)
 
 fetches=[]
@@ -197,10 +199,14 @@ for i in range(train_iters):
     Lxs[i],Lzs[i],m_out,_=results
     if i%100==0:
         print("iter=%d : Lx: %f Lz: %f" % (i,Lxs[i],Lzs[i]))
-        m_out = m_out.reshape(batch_size, A*B, 3)
-        img = xrecons_color_grid(m_out, B, A)
+        m_out = m_out.reshape(batch_size, A*B, 3)[:25]
+        m_out /= m_out.max()
+        img = xrecons_color_grid(m_out[:25], B, A)
+        # xtrain = xtrain[:25].reshape(25, A*B, 3)
+        # xtrain /= 256
+        # img = xrecons_color_grid(xtrain, B, A)
         plt.imshow(img)
-        plt.savefig('vis.%d.png' % i)
+        plt.savefig('reconstructions.cifar10.%d.png' % i)
 
 ## TRAINING FINISHED ## 
 

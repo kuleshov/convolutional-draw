@@ -87,10 +87,10 @@ def sampleQ(h_enc):
     mu is (batch,z_size)
     """
     with tf.variable_scope("mu",reuse=DO_SHARE):
-        mu=conv(h_enc,n_chan_z)
+        mu = conv(h_enc,n_chan_z)
     with tf.variable_scope("sigma",reuse=DO_SHARE):
-        logsigma=mu=conv(h_enc,n_chan_z)
-        sigma=tf.exp(logsigma)
+        logsigma = conv(h_enc,n_chan_z)
+        sigma = tf.exp(logsigma)
     return (mu + sigma*e, mu, logsigma, sigma)
 
 def decode(state,input):
@@ -199,7 +199,7 @@ for i in range(train_iters):
         print("iter=%d : Lx: %f Lz: %f" % (i,Lxs[i],Lzs[i]))
         img = xrecons_grid(xri, B, A)
         plt.matshow(img)
-        plt.savefig('vis.%d.png' % i)
+        plt.savefig('reconstructions.mnist.%d.png' % i)
 
 ## TRAINING FINISHED ## 
 
