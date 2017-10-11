@@ -13,13 +13,14 @@ class ConvLSTMCell(object):
   The implementation is based on http://arxiv.org/abs/1506.04214. 
    and `BasicLSTMCell` in TensorFlow. 
   """
-  def __init__(self, hidden_num, filter_size=[3,3], 
+  def __init__(self, hidden_num, filter_size=[3,3], scale=1,
                forget_bias=1.0, activation=tanh, name="ConvLSTMCell"):
     self.hidden_num = hidden_num
     self.filter_size = filter_size
     self.forget_bias = forget_bias
     self.activation = activation
     self.name = name
+    self.scale = scale
 
   def zero_state(self, batch_size, height, width):
     return tf.zeros([batch_size, height, width, self.hidden_num*2])
@@ -30,7 +31,9 @@ class ConvLSTMCell(object):
       c, h = tf.split(state, 2, axis=3)
 
       # batch_size * height * width * channel
-      concat = _conv([inputs, h], 4 * self.hidden_num, self.filter_size)
+      concat_i = _conv(inputs, 4 * self.hidden_num, self.filter_size, scale=self.scale, scope='conv_i')
+      concat_h = _conv(h, 4 * self.hidden_num, self.filter_size, scope='conv_h')
+      concat = concat_i + concat_h
 
       # i = input_gate, j = new_input, f = forget_gate, o = output_gate
       i, j, f, o = tf.split(concat, 4, axis=3)
@@ -42,7 +45,7 @@ class ConvLSTMCell(object):
 
       return new_h, new_state
       
-def _conv(args, output_size, filter_size, stddev=0.001, bias=True, bias_start=0.0, scope=None):
+def _conv(args, output_size, filter_size, scale=1, stddev=0.001, bias=True, bias_start=0.0, scope=None):
   if args is None or (nest.is_sequence(args) and not args):
     raise ValueError("`args` must be specified")
   if not nest.is_sequence(args):
@@ -68,10 +71,11 @@ def _conv(args, output_size, filter_size, stddev=0.001, bias=True, bias_start=0.
       [filter_size[0], filter_size[1], total_arg_size, output_size],
       initializer=init_ops.truncated_normal_initializer(stddev=stddev))
     
+    s = scale
     if len(args) == 1:
-      res = tf.nn.conv2d(args[0], kernel, [1, 1, 1, 1], padding='SAME')
+      res = tf.nn.conv2d(args[0], kernel, [1, s, s, 1], padding='SAME')
     else:
-      res = tf.nn.conv2d(tf.concat(args, axis=3), kernel, [1, 1, 1, 1], padding='SAME')
+      res = tf.nn.conv2d(tf.concat(args, axis=3), kernel, [1, s, s, 1], padding='SAME')
 
     if not bias: return res
     bias_term = vs.get_variable( "Bias", [output_size],
