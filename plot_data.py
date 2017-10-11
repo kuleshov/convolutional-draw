@@ -36,6 +36,20 @@ def xrecons_grid(X,B,A):
 			img[startr:endr,startc:endc]=X[i,j,:,:]
 	return img
 
+def xrecons_color_grid(X,B,A):
+	"""
+	plots canvas for single time step
+	X is x_recons, (batch_size x img_size)
+	assumes features = BxA images
+	batch is assumed to be a square number
+	"""
+	n_chan = X.shape[2]
+	chan_imgs = []
+	for chan in range(n_chan):
+		chan_imgs += [ xrecons_grid(X[:,:,chan], B, A)[:,:,np.newaxis] ]
+	
+	return np.concatenate(chan_imgs, axis=2)
+
 if __name__ == '__main__':
 	prefix=sys.argv[1]
 	out_file=sys.argv[2]
