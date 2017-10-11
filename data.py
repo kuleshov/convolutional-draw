@@ -83,6 +83,9 @@ def load_svhn():
   X_train, y_train = load_svhn_files(['train_%d.pkl' % i for i in (1, 2, 3)])
   X_test, y_test = load_svhn_files('test.pkl')
 
+  X_train = np.transpose(X_train, [0, 2, 3, 1])
+  X_test = np.transpose(X_test, [0, 2, 3, 1])
+
   return X_train, y_train, X_test, y_test  
 
 # ----------------------------------------------------------------------------
