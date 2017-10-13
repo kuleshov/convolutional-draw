@@ -90,6 +90,7 @@ def sampleQ(h_enc):
         mu = conv(h_enc,n_chan_z)
     with tf.variable_scope("sigma",reuse=DO_SHARE):
         logsigma = conv(h_enc,n_chan_z)
+        logsigma = tf.clip_by_value(logsigma, -5, 5)
         sigma = tf.exp(logsigma)
     return (mu + sigma * e, mu, logsigma, sigma)
 

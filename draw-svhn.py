@@ -27,11 +27,11 @@ img_size = B*A # the canvas size
 n_chan_x = 3 # num of channels in the images
 n_chan_r = n_chan_x * 2 # contains mean + log-stdv
 n_chan_z = 12 # num of channels in the latent variables
-n_chan_hd = 320 # num of channels in decoder hidden state
-n_chan_he = 320 # num of channels in encoder hidden state
+n_chan_hd = 160 # num of channels in decoder hidden state
+n_chan_he = 160 # num of channels in encoder hidden state
 
-T=32 # generation sequence length
-batch_size=32 # training minibatch size
+T=16 # generation sequence length
+batch_size=64 # training minibatch size
 train_iters=10000
 learning_rate=1e-4 # learning rate for optimizer
 eps=1e-6 # epsilon for numerical stability
